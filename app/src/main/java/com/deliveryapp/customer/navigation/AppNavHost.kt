@@ -2,8 +2,10 @@ package com.deliveryapp.customer.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.deliveryapp.customer.feature.auth.LoginScreen
 import com.deliveryapp.customer.feature.auth.RegisterScreen
 import com.deliveryapp.customer.feature.home.HomeScreen
@@ -48,22 +50,34 @@ fun AppNavHost(navController: NavHostController) {
         composable(AppRoutes.CreateOrder) {
             CreateOrderScreen(
                 onBack = { navController.popBackStack() },
-                onCreated = { navController.navigate(AppRoutes.OrderDetail) }
+                onCreated = { orderId ->
+                    navController.navigate(AppRoutes.orderDetail(orderId)) {
+                        popUpTo(AppRoutes.CreateOrder) { inclusive = true }
+                    }
+                }
             )
         }
-        composable(AppRoutes.OrderDetail) {
+        composable(
+            route = AppRoutes.OrderDetail,
+            arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+        ) { entry ->
+            val orderId = requireNotNull(entry.arguments?.getString("orderId"))
             OrderDetailScreen(
-                onBack = { navController.popBackStack() },
-                onTrack = { navController.navigate(AppRoutes.Tracking) },
-                onCancelled = { openMain(AppRoutes.Orders) }
+                orderId = orderId,
+                onBack = { openMain(AppRoutes.Orders) },
+                onTrack = { navController.navigate(AppRoutes.tracking(it)) }
             )
         }
-        composable(AppRoutes.Tracking) {
-            TrackingScreen(onBack = { openMain(AppRoutes.Orders) })
+        composable(
+            route = AppRoutes.Tracking,
+            arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+        ) { entry ->
+            val orderId = requireNotNull(entry.arguments?.getString("orderId"))
+            TrackingScreen(orderId = orderId, onBack = { navController.popBackStack() })
         }
         composable(AppRoutes.Orders) {
             OrdersScreen(
-                onTrack = { navController.navigate(AppRoutes.Tracking) },
+                onOrderSelected = { navController.navigate(AppRoutes.orderDetail(it)) },
                 onHome = { openMain(AppRoutes.Home) },
                 onRewards = { openMain(AppRoutes.Rewards) },
                 onProfile = { openMain(AppRoutes.Profile) }

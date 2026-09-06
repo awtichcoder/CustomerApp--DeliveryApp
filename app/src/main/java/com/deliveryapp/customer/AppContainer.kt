@@ -7,6 +7,10 @@ import com.deliveryapp.customer.data.api.DeliveryApi
 import com.deliveryapp.customer.data.api.IdentityApi
 import com.deliveryapp.customer.data.api.LoyaltyApi
 import com.deliveryapp.customer.data.api.OrderApi
+import com.deliveryapp.customer.feature.order.NetworkOrderRepository
+import com.deliveryapp.customer.feature.order.OrderRepository
+import com.deliveryapp.customer.feature.tracking.DeliveryRepository
+import com.deliveryapp.customer.feature.tracking.NetworkDeliveryRepository
 
 class AppContainer(context: Context) {
     val tokenManager = TokenManager(context.applicationContext)
@@ -17,4 +21,7 @@ class AppContainer(context: Context) {
     val orderApi: OrderApi = retrofit.create(OrderApi::class.java)
     val deliveryApi: DeliveryApi = retrofit.create(DeliveryApi::class.java)
     val loyaltyApi: LoyaltyApi = retrofit.create(LoyaltyApi::class.java)
+
+    val orderRepository: OrderRepository = NetworkOrderRepository(orderApi)
+    val deliveryRepository: DeliveryRepository = NetworkDeliveryRepository(deliveryApi)
 }

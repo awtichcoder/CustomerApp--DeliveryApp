@@ -17,7 +17,7 @@
 - HTTP chỉ được cho phép ở bản debug để kết nối Backend local.
 - Có GitHub Actions kiểm tra unit test, lint và debug build.
 
-Các màn hình hiện là bộ khung điều hướng. ViewModel, Repository, giao diện hoàn chỉnh và việc gọi API từ màn hình được chia cho hai phần bên dưới.
+Phần 2 (Đơn hàng và theo dõi giao hàng) đã có Repository, ViewModel, giao diện Compose và unit test. Phần 1 (Tài khoản và trải nghiệm khách hàng) vẫn cần hoàn thiện để có luồng đăng nhập lấy JWT trước khi kiểm thử end-to-end trên ứng dụng.
 
 ## Yêu cầu môi trường
 
@@ -102,7 +102,8 @@ com.deliveryapp.customer
 │   ├── network
 │   │   ├── ApiResult.kt
 │   │   ├── AuthInterceptor.kt
-│   │   └── NetworkFactory.kt
+│   │   ├── NetworkFactory.kt
+│   │   └── SafeApiCall.kt
 │   └── storage
 │       └── TokenManager.kt
 ├── data
@@ -160,6 +161,40 @@ Phạm vi chính:
 - Polling trạng thái tìm tài xế và vị trí tài xế.
 - Tích hợp bản đồ sau khi có Google Maps API key.
 - Unit test cho OrderViewModel và logic polling.
+
+Trạng thái triển khai:
+
+- Đã hoàn thành form tạo đơn, validation và UUID `clientRequestId`.
+- Đã khóa thao tác khi đang gửi để một lần bấm nhanh chỉ tạo một request.
+- Đã hiển thị đầy đủ phí cơ bản, phụ phí, phí nền tảng, giảm khuyến mãi, giảm điểm và tổng phí.
+- Đã hoàn thành danh sách đơn, lọc theo toàn bộ trạng thái và phân trang.
+- Đã hoàn thành chi tiết đơn và hủy đơn bằng `reasonCode` + `version`.
+- Khi gặp `ORDER_VERSION_CONFLICT`, ứng dụng tự tải lại phiên bản mới nhất.
+- Đã polling trạng thái tìm tài xế mỗi 3 giây và vị trí tài xế mỗi 5 giây.
+- Polling được hủy bằng `DisposableEffect` khi rời màn hình.
+- Đã có trạng thái loading, empty, lỗi API, mất kết nối và nút thử lại.
+- Đã thêm unit test cho validation, chống gửi trùng, lọc/phân trang, version conflict và dừng polling.
+- Giao diện dùng token màu của Figma Customer v3 (`#16A36A`, `#F6F8F7`, `#12211B`).
+
+Google Maps chưa được nhúng vì repository chưa có Maps API key. Màn hình tracking vẫn hiển thị tọa độ mới nhất, thời gian cập nhật, trạng thái kết nối và timeline giao hàng. Không commit Maps API key lên Git; khi nhóm cung cấp key, lưu key trong `local.properties` hoặc `secrets.properties` đã được `.gitignore` loại trừ.
+
+## Kiểm thử Phần 2
+
+Sau khi Phần 1 đăng nhập và lưu JWT thành công:
+
+1. Mở **Tạo đơn** và thử gửi thiếu dữ liệu để kiểm tra validation tại trường nhập.
+2. Nhập hai địa chỉ, tọa độ hợp lệ, số điện thoại, mã ưu đãi/điểm nếu có rồi bấm tạo đơn liên tục; Backend chỉ được có một đơn cho cùng `clientRequestId`.
+3. Kiểm tra chi tiết phí trả về và màn hình trạng thái tìm tài xế.
+4. Mở **Đơn hàng**, đổi bộ lọc và bấm **Tải thêm** khi có trên 20 đơn.
+5. Hủy một đơn còn cho phép hủy; kiểm tra trạng thái `CANCELLED` và thông báo version conflict nếu dữ liệu đã thay đổi.
+6. Khi tài xế nhận đơn, mở tracking và quan sát vị trí/timeline cập nhật. Rời màn hình để xác nhận polling dừng.
+
+Chạy kiểm thử tự động:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+.\gradlew.bat testDebugUnitTest lintDebug assembleDebug
+```
 
 ## Quy trình Git
 

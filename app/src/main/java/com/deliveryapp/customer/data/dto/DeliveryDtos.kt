@@ -19,7 +19,18 @@ data class DeliveryResponse(
     val driverId: String?,
     val status: String,
     val totalFee: Long,
-    val version: Int
+    val version: Int,
+    val pickupAddress: String = "",
+    val dropoffAddress: String = "",
+    val receiverPhone: String? = null,
+    val currentRadiusKm: Double = 0.0,
+    val searchStartedAt: String = "",
+    val searchEndedAt: String? = null,
+    val assignedAt: String? = null,
+    val pickedUpAt: String? = null,
+    val deliveringAt: String? = null,
+    val completedAt: String? = null,
+    val cancelledAt: String? = null
 )
 data class DriverLocationResponse(
     val deliveryId: String,
