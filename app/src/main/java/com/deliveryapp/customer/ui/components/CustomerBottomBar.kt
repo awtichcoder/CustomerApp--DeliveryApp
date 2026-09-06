@@ -1,4 +1,4 @@
-package com.deliveryapp.customer.ui.components
+﻿package com.deliveryapp.customer.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong

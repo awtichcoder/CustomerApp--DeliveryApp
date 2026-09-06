@@ -1,4 +1,4 @@
-package com.deliveryapp.customer.ui.theme
+﻿package com.deliveryapp.customer.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
@@ -9,3 +9,8 @@ val DeliveryTextPrimary = Color(0xFF12211B)
 val DeliveryTextSecondary = Color(0xFF6B7D75)
 val DeliveryCanvas = Color(0xFFF6F8F7)
 val DeliveryBorder = Color(0xFFDDE8E3)
+val DeliverySurface = Color(0xFFFFFFFF)
+val DeliveryText = DeliveryTextPrimary
+val DeliveryMuted = DeliveryTextSecondary
+val DeliveryDanger = Color(0xFFD92D20)
+val DeliveryWarning = Color(0xFFFFF3D6)

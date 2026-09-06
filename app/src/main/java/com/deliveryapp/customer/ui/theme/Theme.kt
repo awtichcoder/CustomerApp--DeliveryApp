@@ -1,4 +1,4 @@
-package com.deliveryapp.customer.ui.theme
+﻿package com.deliveryapp.customer.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,30 +9,39 @@ import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = DeliveryGreen,
-    secondary = DeliveryTextSecondary,
-    primaryContainer = DeliveryGreenDark,
-    background = DeliveryTextPrimary,
-    surface = DeliveryTextPrimary
+    secondary = DeliveryGreenSoft,
+    tertiary = DeliveryWarning,
+    background = DeliveryText,
+    surface = Color(0xFF1A2A23),
+    onPrimary = Color.White,
+    onSecondary = DeliveryText,
+    onTertiary = DeliveryText,
+    onBackground = Color.White,
+    onSurface = Color.White,
+    error = DeliveryDanger
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = DeliveryGreen,
-    onPrimary = Color.White,
-    primaryContainer = DeliveryGreenSoft,
-    onPrimaryContainer = DeliveryGreenDark,
-    secondary = DeliveryTextSecondary,
+    secondary = DeliveryGreenSoft,
+    tertiary = DeliveryWarning,
     background = DeliveryCanvas,
-    onBackground = DeliveryTextPrimary,
-    surface = Color.White,
-    onSurface = DeliveryTextPrimary,
+    surface = DeliverySurface,
+    onPrimary = Color.White,
+    onSecondary = DeliveryText,
+    onTertiary = DeliveryText,
+    onBackground = DeliveryText,
+    onSurface = DeliveryText,
     surfaceVariant = DeliveryGreenSoft,
-    onSurfaceVariant = DeliveryTextSecondary,
-    outline = DeliveryBorder
+    onSurfaceVariant = DeliveryMuted,
+    outline = DeliveryBorder,
+    error = DeliveryDanger
 )
 
 @Composable
 fun DeliveryCustomerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
