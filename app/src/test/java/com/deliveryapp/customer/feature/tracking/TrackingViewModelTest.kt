@@ -5,6 +5,8 @@ import com.deliveryapp.customer.core.network.ApiResult
 import com.deliveryapp.customer.data.dto.DeliveryResponse
 import com.deliveryapp.customer.data.dto.DriverLocationResponse
 import com.deliveryapp.customer.data.dto.MatchingStatusResponse
+import com.deliveryapp.customer.data.dto.RoutePath
+import com.deliveryapp.customer.data.dto.RoutePoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -43,13 +45,46 @@ class TrackingViewModelTest {
         assertTrue(callsAfterStop >= 2)
         assertEquals(callsAfterStop, repository.locationCalls)
     }
+
+    @Test
+    fun assignedDriver_loadsRouteFromDriverToPickup() = runTest(mainDispatcherRule.dispatcher) {
+        val deliveryRepository = AssignedDeliveryRepository()
+        val routingRepository = RecordingRoutingRepository()
+        val viewModel = TrackingViewModel(
+            orderId = "order-1",
+            repository = deliveryRepository,
+            pollIntervalMs = 1_000,
+            routingRepository = routingRepository
+        )
+
+        viewModel.startPolling()
+        runCurrent()
+
+        assertEquals(10.780001, routingRepository.endLatitude, 0.000001)
+        assertEquals(106.690001, routingRepository.endLongitude, 0.000001)
+        assertNotNull(viewModel.state.value.route)
+        assertEquals("Đường đến điểm lấy hàng", viewModel.state.value.routeDestinationLabel)
+        viewModel.stopPolling()
+    }
 }
 
 private class AssignedDeliveryRepository : DeliveryRepository {
     var locationCalls = 0
 
     override suspend fun getByOrder(orderId: String) = ApiResult.Success(
-        DeliveryResponse("delivery-1", orderId, "customer-1", "driver-1", "ASSIGNED", 59_520, 2)
+        DeliveryResponse(
+            deliveryId = "delivery-1",
+            orderId = orderId,
+            customerId = "customer-1",
+            driverId = "driver-1",
+            status = "ASSIGNED",
+            totalFee = 59_520,
+            version = 2,
+            pickupLatitude = 10.780001,
+            pickupLongitude = 106.690001,
+            dropoffLatitude = 10.790001,
+            dropoffLongitude = 106.700001
+        )
     )
 
     override suspend fun getMatchingStatus(orderId: String) = ApiResult.Success(
@@ -60,6 +95,31 @@ private class AssignedDeliveryRepository : DeliveryRepository {
         locationCalls++
         return ApiResult.Success(
             DriverLocationResponse(deliveryId, "driver-1", 10.776889, 106.700806, "now", 5.0)
+        )
+    }
+}
+
+private class RecordingRoutingRepository : RoutingRepository {
+    var endLatitude = 0.0
+    var endLongitude = 0.0
+
+    override suspend fun getRoute(
+        startLatitude: Double,
+        startLongitude: Double,
+        endLatitude: Double,
+        endLongitude: Double
+    ): ApiResult<RoutePath> {
+        this.endLatitude = endLatitude
+        this.endLongitude = endLongitude
+        return ApiResult.Success(
+            RoutePath(
+                points = listOf(
+                    RoutePoint(startLatitude, startLongitude),
+                    RoutePoint(endLatitude, endLongitude)
+                ),
+                distanceKm = 2.4,
+                durationMinutes = 8.0
+            )
         )
     }
 }

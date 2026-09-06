@@ -1,6 +1,6 @@
 # DeliveryCustomer Android
 
-Ứng dụng Android dành cho khách hàng của DeliveryApp. Dự án dùng Kotlin, Jetpack Compose và kiến trúc MVVM theo chức năng. Mọi request được gửi qua API Gateway của Backend.
+Ứng dụng Android dành cho khách hàng của DeliveryApp. Dự án dùng Kotlin, Jetpack Compose và kiến trúc MVVM theo chức năng. Các request nghiệp vụ được gửi qua API Gateway; bản đồ, gợi ý địa chỉ và tìm đường dùng các dịch vụ bản đồ công khai riêng, không nhận JWT của DeliveryApp.
 
 ## Trạng thái hiện tại
 
@@ -11,13 +11,14 @@
 - Retrofit, OkHttp và các API interface cho Identity, Order, Delivery, Loyalty.
 - DTO request và response khớp với Backend hiện tại.
 - `AppContainer` cung cấp các API dùng chung cho toàn ứng dụng.
+- Đã tích hợp luồng tài khoản từ nhánh `feature/customer-account` với phần đơn hàng.
 - DataStore lưu access token và refresh token.
 - `AuthInterceptor` tự gắn `Authorization: Bearer <accessToken>`.
 - Token không được Android Backup hoặc device transfer sao lưu.
 - HTTP chỉ được cho phép ở bản debug để kết nối Backend local.
 - Có GitHub Actions kiểm tra unit test, lint và debug build.
 
-Phần 2 (Đơn hàng và theo dõi giao hàng) đã có Repository, ViewModel, giao diện Compose và unit test. Phần 1 (Tài khoản và trải nghiệm khách hàng) vẫn cần hoàn thiện để có luồng đăng nhập lấy JWT trước khi kiểm thử end-to-end trên ứng dụng.
+Phần tài khoản, đơn hàng và theo dõi giao hàng đã được kết nối trong cùng ứng dụng. Luồng end-to-end vẫn cần Backend và một tài khoản tài xế đang online để kiểm thử nhận đơn thực tế.
 
 ## Yêu cầu môi trường
 
@@ -25,6 +26,7 @@ Phần 2 (Đơn hàng và theo dõi giao hàng) đã có Repository, ViewModel, 
 - Android SDK 36.
 - Máy ảo Android API 26 trở lên.
 - Docker Desktop để chạy Backend DeliveryApp.
+- Không cần Google Maps API key; bản đồ tracking dùng MapLibre và OpenFreeMap.
 - Git.
 
 ## Clone và mở dự án
@@ -71,6 +73,18 @@ http://10.0.2.2:6200/
 `10.0.2.2` là địa chỉ để máy ảo Android truy cập `localhost` của máy tính. Cấu hình nằm trong `app/build.gradle.kts` dưới tên `BuildConfig.API_BASE_URL`.
 
 Nếu chạy bằng điện thoại thật, thay `10.0.2.2` bằng IPv4 của máy tính trong cùng mạng Wi-Fi, ví dụ `http://192.168.1.10:6200/`. Firewall phải cho phép cổng 6200.
+
+## Bản đồ, GPS và tìm địa chỉ
+
+Màn hình tracking dùng **MapLibre Native** với style bản đồ từ **OpenFreeMap**, không cần API key hoặc tài khoản thanh toán. Bản đồ luôn hiển thị; khi Backend trả về vị trí tài xế, ứng dụng tự căn camera và đặt biểu tượng xe giao hàng. Ứng dụng luôn hiển thị ghi công `© OpenStreetMap contributors` trên bản đồ.
+
+Form tạo đơn có nút **Dùng vị trí hiện tại**. Android sẽ xin quyền GPS khi người dùng bấm nút. Hai ô địa chỉ lấy/giao hàng gọi Photon để gợi ý địa chỉ Việt Nam và tự lưu tọa độ sau khi người dùng chọn. Photon dùng một Retrofit/OkHttp riêng nên access token của DeliveryApp không được gửi sang dịch vụ bản đồ bên ngoài.
+
+Khi tài xế nhận đơn, ứng dụng gọi OSRM để lấy hình tuyến đường theo mạng lưới đường bộ. Trước lúc lấy hàng, tuyến được vẽ từ xe đến điểm lấy; sau trạng thái `PICKED_UP`, đích tự chuyển sang điểm giao. Khoảng cách và thời gian dự kiến được hiển thị bên dưới bản đồ.
+
+Thiết bị cần có Internet để tải style và dữ liệu bản đồ. Không xóa phần ghi công và không tải hàng loạt dữ liệu bản đồ để dùng ngoại tuyến nếu chưa chọn nhà cung cấp tile phù hợp.
+
+Photon và OSRM public phù hợp cho học tập/demo, không phải hạ tầng production có SLA. Nếu triển khai nhiều người dùng, cần tự host hoặc chọn nhà cung cấp bản đồ có quota/SLA rõ ràng.
 
 ## Chạy ứng dụng
 
@@ -159,7 +173,7 @@ Phạm vi chính:
 
 - Tạo đơn, danh sách đơn, chi tiết và hủy đơn.
 - Polling trạng thái tìm tài xế và vị trí tài xế.
-- Tích hợp bản đồ sau khi có Google Maps API key.
+- MapLibre hiển thị marker và tự cập nhật camera theo vị trí tài xế.
 - Unit test cho OrderViewModel và logic polling.
 
 Trạng thái triển khai:
@@ -170,20 +184,22 @@ Trạng thái triển khai:
 - Đã hoàn thành danh sách đơn, lọc theo toàn bộ trạng thái và phân trang.
 - Đã hoàn thành chi tiết đơn và hủy đơn bằng `reasonCode` + `version`.
 - Khi gặp `ORDER_VERSION_CONFLICT`, ứng dụng tự tải lại phiên bản mới nhất.
-- Đã polling trạng thái tìm tài xế mỗi 3 giây và vị trí tài xế mỗi 5 giây.
+- Đã polling trạng thái tìm tài xế mỗi 3 giây và dữ liệu tracking mỗi 30 giây.
 - Polling được hủy bằng `DisposableEffect` khi rời màn hình.
 - Đã có trạng thái loading, empty, lỗi API, mất kết nối và nút thử lại.
 - Đã thêm unit test cho validation, chống gửi trùng, lọc/phân trang, version conflict và dừng polling.
 - Giao diện dùng token màu của Figma Customer v3 (`#16A36A`, `#F6F8F7`, `#12211B`).
 
-Google Maps chưa được nhúng vì repository chưa có Maps API key. Màn hình tracking vẫn hiển thị tọa độ mới nhất, thời gian cập nhật, trạng thái kết nối và timeline giao hàng. Không commit Maps API key lên Git; khi nhóm cung cấp key, lưu key trong `local.properties` hoặc `secrets.properties` đã được `.gitignore` loại trừ.
+MapLibre đã được nhúng với nguồn bản đồ OpenFreeMap và không cần API key. Bản đồ vẫn hiển thị khi chưa có tọa độ và chuyển sang biểu tượng xe khi nhận vị trí tài xế.
+
+Ứng dụng Customer chỉ **đọc** vị trí mới nhất từ Backend. Ứng dụng Shipper phải gửi GPS mới khoảng 30 giây/lần bằng `PUT /api/driver/me/location`, dùng Bearer token có role `DRIVER` và `recordedAt` theo UTC. Nếu app Shipper không gửi dữ liệu thì Customer vẫn thấy bản đồ nhưng không thể thấy xe di chuyển.
 
 ## Kiểm thử Phần 2
 
 Sau khi Phần 1 đăng nhập và lưu JWT thành công:
 
 1. Mở **Tạo đơn** và thử gửi thiếu dữ liệu để kiểm tra validation tại trường nhập.
-2. Nhập hai địa chỉ, tọa độ hợp lệ, số điện thoại, mã ưu đãi/điểm nếu có rồi bấm tạo đơn liên tục; Backend chỉ được có một đơn cho cùng `clientRequestId`.
+2. Nhập ít nhất 3 ký tự ở hai ô địa chỉ rồi chọn đúng một gợi ý; hoặc dùng GPS cho địa chỉ lấy hàng. Nhập số điện thoại, mã ưu đãi/điểm nếu có rồi bấm tạo đơn liên tục; Backend chỉ được có một đơn cho cùng `clientRequestId`.
 3. Kiểm tra chi tiết phí trả về và màn hình trạng thái tìm tài xế.
 4. Mở **Đơn hàng**, đổi bộ lọc và bấm **Tải thêm** khi có trên 20 đơn.
 5. Hủy một đơn còn cho phép hủy; kiểm tra trạng thái `CANCELLED` và thông báo version conflict nếu dữ liệu đã thay đổi.

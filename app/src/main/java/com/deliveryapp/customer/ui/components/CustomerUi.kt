@@ -17,15 +17,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,7 +40,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.deliveryapp.customer.ui.theme.DeliveryBorder
 import com.deliveryapp.customer.ui.theme.DeliveryDanger
 import com.deliveryapp.customer.ui.theme.DeliveryGreen
@@ -47,57 +54,75 @@ import com.deliveryapp.customer.ui.theme.DeliveryWarning
 
 @Composable
 fun AppSurface(content: @Composable () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-        content = content
-    )
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background, content = content)
 }
 
 @Composable
-fun DeliveryCard(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
+fun DeliveryCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DeliverySurface),
         border = BorderStroke(1.dp, DeliveryBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(11.dp),
             content = content
         )
     }
 }
 
 @Composable
-fun GreenHeader(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier
-) {
+fun GreenHeader(title: String, subtitle: String, modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(DeliveryGreen)
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+        modifier = modifier.fillMaxWidth().height(260.dp).background(DeliveryGreen).padding(20.dp),
+        contentAlignment = Alignment.BottomStart
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.86f)
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                Modifier.size(62.dp).background(DeliverySurface, RoundedCornerShape(20.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("D", color = DeliveryGreen, fontWeight = FontWeight.Bold, fontSize = 30.sp)
+            }
+            Text(title, style = MaterialTheme.typography.headlineLarge, color = Color.White)
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Color.White)
         }
+    }
+}
+
+@Composable
+fun ScreenHeader(
+    title: String,
+    subtitle: String? = null,
+    onBack: (() -> Unit)? = null,
+    action: (@Composable () -> Unit)? = null
+) {
+    Row(
+        Modifier.fillMaxWidth().height(84.dp).background(DeliverySurface).padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (onBack != null) {
+            IconButton(onClick = onBack, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBackIos, "Quay lại", tint = DeliveryText)
+            }
+            Spacer(Modifier.width(4.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = DeliveryMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        action?.invoke()
     }
 }
 
@@ -112,21 +137,25 @@ fun AppTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     singleLine: Boolean = true
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(5.dp)) {
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { Text(label) },
+            label = { Text(label, fontSize = 12.sp) },
             isError = error != null,
             keyboardOptions = keyboardOptions,
             visualTransformation = visualTransformation,
             singleLine = singleLine,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp)
+            modifier = Modifier.fillMaxWidth().height(64.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = DeliveryGreen,
+                unfocusedBorderColor = DeliveryBorder,
+                focusedContainerColor = DeliverySurface,
+                unfocusedContainerColor = DeliverySurface
+            )
         )
-        if (error != null) {
-            Text(text = error, color = DeliveryDanger, style = MaterialTheme.typography.bodyMedium)
-        }
+        if (error != null) Text(error, color = DeliveryDanger, style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -140,22 +169,13 @@ fun PrimaryAction(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp),
+        modifier = modifier.fillMaxWidth().height(54.dp),
         enabled = enabled && !loading,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(containerColor = DeliveryGreen)
     ) {
-        if (loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(20.dp),
-                strokeWidth = 2.dp,
-                color = Color.White
-            )
-        } else {
-            Text(label, style = MaterialTheme.typography.labelLarge)
-        }
+        if (loading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
+        else Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -169,92 +189,79 @@ fun SecondaryAction(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp),
+        modifier = modifier.fillMaxWidth().height(46.dp),
         enabled = enabled,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(15.dp),
         border = BorderStroke(1.dp, if (danger) DeliveryDanger else DeliveryBorder),
-        colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = if (danger) DeliveryDanger else DeliveryText
-        )
-    ) {
-        Text(label, style = MaterialTheme.typography.labelLarge)
-    }
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = if (danger) DeliveryDanger else DeliveryText)
+    ) { Text(label, style = MaterialTheme.typography.labelLarge) }
 }
 
 @Composable
 fun LoadingState(message: String, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxWidth().padding(vertical = 32.dp),
+        modifier.fillMaxWidth().padding(vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         CircularProgressIndicator(color = DeliveryGreen)
-        Text(text = message, style = MaterialTheme.typography.bodyMedium, color = DeliveryMuted)
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = DeliveryMuted)
     }
 }
 
 @Composable
-fun ErrorState(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    DeliveryCard(modifier = modifier) {
-        Text(text = "Không tải được dữ liệu", style = MaterialTheme.typography.titleMedium)
-        Text(text = message, style = MaterialTheme.typography.bodyMedium, color = DeliveryMuted)
-        PrimaryAction(label = "Thử lại", onClick = onRetry)
+fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    DeliveryCard(modifier) {
+        Text("Không tải được dữ liệu", style = MaterialTheme.typography.titleMedium)
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = DeliveryMuted)
+        PrimaryAction("Thử lại", onRetry)
     }
 }
 
 @Composable
-fun StatusBanner(
-    title: String,
-    subtitle: String,
-    modifier: Modifier = Modifier,
-    warning: Boolean = false
-) {
+fun StatusBanner(title: String, subtitle: String, modifier: Modifier = Modifier, warning: Boolean = false) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(if (warning) DeliveryWarning else DeliveryGreenSoft, RoundedCornerShape(8.dp))
+        modifier.fillMaxWidth()
+            .background(if (warning) DeliveryWarning else DeliveryGreenSoft, RoundedCornerShape(16.dp))
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier
-                .size(34.dp)
-                .background(if (warning) Color(0xFFFFB020) else DeliveryGreen, CircleShape),
+            Modifier.size(20.dp).background(if (warning) Color(0xFFFFB020) else DeliveryGreen, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = if (warning) "!" else "✓", color = Color.White, fontWeight = FontWeight.Bold)
+            if (warning) Text("!", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
         }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium, color = DeliveryText)
-            Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = DeliveryMuted)
+        Spacer(Modifier.width(10.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, style = MaterialTheme.typography.labelLarge, color = DeliveryText, fontWeight = FontWeight.Bold)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
         }
     }
 }
 
 @Composable
 fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = DeliveryMuted)
-        Text(text = value, style = MaterialTheme.typography.titleMedium, color = DeliveryText)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            value,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodySmall,
+            color = DeliveryText,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
 @Composable
 fun EmptyState(title: String, message: String, modifier: Modifier = Modifier) {
-    DeliveryCard(modifier = modifier) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium)
-        Text(text = message, style = MaterialTheme.typography.bodyMedium, color = DeliveryMuted)
+    DeliveryCard(modifier) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = DeliveryMuted)
     }
 }
 
@@ -264,8 +271,6 @@ fun SessionExpiredDialog(onConfirm: () -> Unit) {
         onDismissRequest = onConfirm,
         title = { Text("Phiên đăng nhập hết hạn") },
         text = { Text("Vui lòng đăng nhập lại để tiếp tục sử dụng ứng dụng.") },
-        confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Đăng nhập") }
-        }
+        confirmButton = { TextButton(onClick = onConfirm) { Text("Đăng nhập") } }
     )
 }

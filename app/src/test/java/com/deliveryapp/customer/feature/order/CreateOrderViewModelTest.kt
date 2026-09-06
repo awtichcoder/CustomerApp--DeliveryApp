@@ -2,6 +2,7 @@ package com.deliveryapp.customer.feature.order
 
 import com.deliveryapp.customer.MainDispatcherRule
 import com.deliveryapp.customer.core.network.ApiResult
+import com.deliveryapp.customer.data.dto.AddressSuggestion
 import com.deliveryapp.customer.data.dto.CreateOrderRequest
 import com.deliveryapp.customer.data.dto.OrderResponse
 import com.deliveryapp.customer.data.dto.PagedResponse
@@ -52,6 +53,38 @@ class CreateOrderViewModelTest {
 
         assertEquals(0, repository.createCalls)
         assertTrue(viewModel.state.value.fieldErrors.isNotEmpty())
+    }
+
+    @Test
+    fun selectSuggestedAddress_savesCoordinatesWithoutManualInput() = runTest(mainDispatcherRule.dispatcher) {
+        val viewModel = CreateOrderViewModel(DeferredCreateRepository())
+        val suggestion = AddressSuggestion(
+            label = "72 Lê Thánh Tôn, Quận 1, TP.HCM",
+            latitude = 10.776889,
+            longitude = 106.700806
+        )
+
+        viewModel.selectAddress(CreateOrderField.PickupAddress, suggestion)
+
+        assertEquals(suggestion.label, viewModel.state.value.pickupAddress)
+        assertEquals("10.776889", viewModel.state.value.pickupLatitude)
+        assertEquals("106.700806", viewModel.state.value.pickupLongitude)
+    }
+
+    @Test
+    fun typedAddressWithoutSuggestion_isRejected() = runTest(mainDispatcherRule.dispatcher) {
+        val repository = DeferredCreateRepository()
+        val viewModel = CreateOrderViewModel(repository)
+        viewModel.onAddressQueryChanged(CreateOrderField.PickupAddress, "Địa chỉ tự nhập")
+        viewModel.onAddressQueryChanged(CreateOrderField.DropoffAddress, "Địa chỉ tự nhập")
+        viewModel.updateField(CreateOrderField.ReceiverPhone, "0912345678")
+
+        viewModel.submit()
+        runCurrent()
+
+        assertEquals(0, repository.createCalls)
+        assertTrue(viewModel.state.value.fieldErrors.containsKey(CreateOrderField.PickupAddress))
+        assertTrue(viewModel.state.value.fieldErrors.containsKey(CreateOrderField.DropoffAddress))
     }
 
     private fun fillValidForm(viewModel: CreateOrderViewModel) {

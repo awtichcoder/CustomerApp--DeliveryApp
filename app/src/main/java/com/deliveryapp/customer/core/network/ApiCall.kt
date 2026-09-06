@@ -2,12 +2,15 @@
 
 import com.google.gson.Gson
 import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import retrofit2.HttpException
 
 private val errorGson = Gson()
 
 suspend fun <T> safeApiCall(block: suspend () -> T): ApiResult<T> = try {
     ApiResult.Success(block())
+} catch (error: CancellationException) {
+    throw error
 } catch (error: HttpException) {
     val status = error.code()
     val body = error.response()?.errorBody()?.string()
@@ -40,6 +43,7 @@ private fun defaultHttpMessage(status: Int): String = when (status) {
     401 -> "Phiên đăng nhập đã hết hạn."
     403 -> "Bạn không có quyền thực hiện thao tác này."
     404 -> "Không tìm thấy dữ liệu."
+    409 -> "Dữ liệu đã thay đổi. Vui lòng tải lại và thử lại."
     in 500..599 -> "Máy chủ đang gặp lỗi. Vui lòng thử lại sau."
     else -> "Yêu cầu thất bại. Vui lòng thử lại."
 }
