@@ -1,4 +1,4 @@
-package com.deliveryapp.customer.ui.components
+﻿package com.deliveryapp.customer.ui.components
 
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -14,19 +14,26 @@ fun CustomerBottomBar(
     onProfile: () -> Unit
 ) {
     val items = listOf(
-        Triple("home", "Trang chủ", onHome),
-        Triple("orders", "Đơn hàng", onOrders),
-        Triple("rewards", "Điểm", onRewards),
-        Triple("profile", "Tài khoản", onProfile)
+        NavItem("home", "Nhà", "Trang chủ", onHome),
+        NavItem("orders", "Đơn", "Đơn hàng", onOrders),
+        NavItem("rewards", "Điểm", "Điểm", onRewards),
+        NavItem("profile", "Tôi", "Tài khoản", onProfile)
     )
     NavigationBar {
-        items.forEach { (route, label, action) ->
+        items.forEach { item ->
             NavigationBarItem(
-                selected = selected == route,
-                onClick = action,
-                icon = { Text(label.take(1)) },
-                label = { Text(label) }
+                selected = selected == item.route,
+                onClick = item.action,
+                icon = { Text(item.iconText) },
+                label = { Text(item.label) }
             )
         }
     }
 }
+
+private data class NavItem(
+    val route: String,
+    val iconText: String,
+    val label: String,
+    val action: () -> Unit
+)

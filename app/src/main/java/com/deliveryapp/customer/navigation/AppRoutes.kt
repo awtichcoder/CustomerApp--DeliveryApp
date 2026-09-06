@@ -1,6 +1,7 @@
-package com.deliveryapp.customer.navigation
+﻿package com.deliveryapp.customer.navigation
 
 object AppRoutes {
+    const val Session = "session"
     const val Login = "login"
     const val Register = "register"
     const val Home = "home"

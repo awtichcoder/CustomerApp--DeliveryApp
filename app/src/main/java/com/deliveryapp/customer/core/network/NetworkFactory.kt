@@ -1,4 +1,4 @@
-package com.deliveryapp.customer.core.network
+﻿package com.deliveryapp.customer.core.network
 
 import com.deliveryapp.customer.BuildConfig
 import com.deliveryapp.customer.core.storage.TokenManager
@@ -15,6 +15,7 @@ object NetworkFactory {
             redactHeader("Authorization")
         }
         val client = OkHttpClient.Builder()
+            .authenticator(TokenRefreshAuthenticator(tokenManager))
             .addInterceptor(AuthInterceptor(tokenManager))
             .addInterceptor(logging)
             .build()
