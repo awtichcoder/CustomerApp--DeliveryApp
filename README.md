@@ -30,8 +30,8 @@ Các màn hình hiện là bộ khung điều hướng. ViewModel, Repository, g
 ## Clone và mở dự án
 
 ```bash
-git clone <URL repository Customer Android>
-cd Fe-customer-DeliveryApp
+git clone https://github.com/awtichcoder/CustomerApp--DeliveryApp.git
+cd CustomerApp--DeliveryApp
 ```
 
 Mở thư mục vừa clone bằng Android Studio, chọn **Trust Project** nếu được hỏi, sau đó chờ **Gradle Sync** hoàn tất. Không sao chép file `local.properties` từ máy khác; Android Studio sẽ tự tạo file này theo vị trí Android SDK của từng máy.
