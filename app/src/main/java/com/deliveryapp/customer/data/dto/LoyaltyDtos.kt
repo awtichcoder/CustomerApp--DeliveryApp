@@ -4,7 +4,9 @@ data class LoyaltyAccountResponse(
     val customerId: String,
     val points: Int,
     val tier: String,
-    val recentTransactions: List<LoyaltyTransactionResponse>
+    val recentTransactions: List<LoyaltyTransactionResponse>,
+    val availablePoints: Int = 0,
+    val tierDiscountPercent: Int = 0
 )
 data class LoyaltyTransactionResponse(
     val transactionId: String,

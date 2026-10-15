@@ -88,6 +88,26 @@ Photon và OSRM public phù hợp cho học tập/demo, không phải hạ tần
 
 ## Chạy ứng dụng
 
+### Luồng tạo đơn và ưu đãi
+
+- Chọn mã từ danh sách do `GET /api/promotion` trả về hoặc chọn **Không dùng mã**.
+- Bấm **Xem phí và điểm sử dụng**: app gọi `POST /api/order/preview`, sau đó `POST /api/loyalty/preview` bằng phí còn lại sau khuyến mãi. Xem trước không giữ điểm/mã.
+- App hiển thị từng khoản phí, điểm khả dụng, điểm có thể dùng và tổng dự kiến; yêu cầu xác nhận lần nữa để tạo đơn. Sửa thông tin sẽ hủy preview cũ và yêu cầu tính lại. Nếu vượt số điểm có thể dùng, chọn số gợi ý trước khi xác nhận.
+- Màn hình điểm thưởng hiển thị tổng điểm và điểm khả dụng riêng. SILVER từ 100, GOLD từ 500 điểm. Ưu đãi hạng 5%/10% chỉ là thông tin, chưa trừ vào phí.
+- Chuông trang chủ mở danh sách cập nhật trạng thái đơn, có làm mới và mở chi tiết. Đây là cập nhật trong app, chưa phải push notification chạy nền.
+- Trợ giúp ở tracking mở hướng dẫn, cho phép kết nối lại hoặc về chi tiết đơn.
+
+Kiểm tra contract thật bằng Retrofit/Gson của FE với BE Docker (tài khoản demo cần có ít nhất một đơn COMPLETED):
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:RUN_BACKEND_CONTRACT = "1"
+.\gradlew.bat testDebugUnitTest --rerun-tasks
+```
+
+Có thể đặt `TEST_CUSTOMER_EMAIL` và `TEST_CUSTOMER_PASSWORD` cho tài khoản thử riêng. Khi không đặt `RUN_BACKEND_CONTRACT`, bài test live này được bỏ qua; unit test còn lại không cần Docker. Contract test xác minh DTO Loyalty, Promotion, bốn tọa độ Delivery và chuỗi preview; test ViewModel xác minh đổi đích tuyến từ pickup sang dropoff sau khi lấy hàng.
+
 1. Trong Android Studio, chọn **Tools > Device Manager**.
 2. Tạo hoặc mở máy ảo API 26 trở lên.
 3. Chọn thiết bị ở thanh công cụ.

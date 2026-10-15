@@ -87,6 +87,7 @@ fun AppNavHost(navController: NavHostController) {
                 onOrders = { openMain(AppRoutes.Orders) },
                 onRewards = { openMain(AppRoutes.Rewards) },
                 onProfile = { openMain(AppRoutes.Profile) },
+                onNotifications = { navController.navigate(AppRoutes.Notifications) },
                 onSessionExpired = { openLoginCleared() }
             )
         }
@@ -99,6 +100,13 @@ fun AppNavHost(navController: NavHostController) {
                     }
                 }
             )
+        }
+        composable(AppRoutes.Notifications) {
+            val orders: com.deliveryapp.customer.feature.order.OrdersViewModel = viewModel(
+                factory = com.deliveryapp.customer.feature.order.OrdersViewModel.Factory(container.orderRepository))
+            com.deliveryapp.customer.feature.home.NotificationsScreen(
+                orders, onBack = { navController.popBackStack() },
+                onOrder = { navController.navigate(AppRoutes.orderDetail(it)) })
         }
         composable(
             route = AppRoutes.OrderDetail,

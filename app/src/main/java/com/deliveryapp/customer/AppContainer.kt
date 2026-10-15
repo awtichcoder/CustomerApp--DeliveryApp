@@ -29,6 +29,9 @@ class AppContainer(context: Context) {
     val orderApi: OrderApi = retrofit.create(OrderApi::class.java)
     val deliveryApi: DeliveryApi = retrofit.create(DeliveryApi::class.java)
     val loyaltyApi: LoyaltyApi = retrofit.create(LoyaltyApi::class.java)
+    val promotionApi = retrofit.create(com.deliveryapp.customer.data.api.PromotionApi::class.java)
+    val checkoutRepository: com.deliveryapp.customer.feature.order.CheckoutRepository =
+        com.deliveryapp.customer.feature.order.NetworkCheckoutRepository(orderApi, loyaltyApi, promotionApi)
     private val addressSearchApi = AddressSearchNetworkFactory.create()
     private val routingApi = RoutingNetworkFactory.create()
 

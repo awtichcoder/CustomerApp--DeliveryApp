@@ -62,7 +62,8 @@ fun HomeScreen(
     onOrders: () -> Unit,
     onRewards: () -> Unit,
     onProfile: () -> Unit,
-    onSessionExpired: () -> Unit
+    onSessionExpired: () -> Unit,
+    onNotifications: () -> Unit
 ) {
     val state = viewModel.state
     if (state.sessionExpired) {
@@ -77,7 +78,7 @@ fun HomeScreen(
                 Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                HomeHeader(state.fullName)
+                HomeHeader(state.fullName, onNotifications)
                 Column(
                     Modifier.fillMaxWidth().padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp)
@@ -95,7 +96,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeader(fullName: String) {
+private fun HomeHeader(fullName: String, onNotifications: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().height(104.dp).background(DeliverySurface).padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -113,7 +114,7 @@ private fun HomeHeader(fullName: String) {
             Text("Bạn muốn giao gì hôm nay?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
         Surface(shape = CircleShape, color = DeliveryGreenSoft) {
-            IconButton(onClick = {}) {
+            IconButton(onClick = onNotifications) {
                 Icon(Icons.Outlined.NotificationsNone, "Thông báo", tint = DeliveryGreen)
             }
         }

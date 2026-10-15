@@ -8,6 +8,8 @@ import com.deliveryapp.customer.data.dto.AddressSuggestion
 import com.deliveryapp.customer.data.dto.CreateOrderRequest
 import com.deliveryapp.customer.data.dto.GeoPointRequest
 import com.deliveryapp.customer.data.dto.OrderResponse
+import com.deliveryapp.customer.data.dto.PromotionResponse
+import com.deliveryapp.customer.data.dto.CheckoutPreview
 import java.util.UUID
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -30,6 +32,11 @@ enum class CreateOrderField {
 }
 
 data class CreateOrderUiState(
+    val promotions: List<PromotionResponse> = emptyList(),
+    val promotionsLoading: Boolean = false,
+    val promotionsError: String? = null,
+    val preview: CheckoutPreview? = null,
+    val isPreviewing: Boolean = false,
     val pickupAddress: String = "",
     val dropoffAddress: String = "",
     val pickupLatitude: String = "",
@@ -54,14 +61,68 @@ data class CreateOrderUiState(
 
 class CreateOrderViewModel(
     private val repository: OrderRepository,
-    private val addressRepository: AddressRepository = EmptyAddressRepository
+    private val addressRepository: AddressRepository = EmptyAddressRepository,
+    private val checkoutRepository: CheckoutRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreateOrderUiState())
     val state: StateFlow<CreateOrderUiState> = _state.asStateFlow()
     private var pickupSearchJob: Job? = null
     private var dropoffSearchJob: Job? = null
+    private var previewJob: Job? = null
+    private var previewRequest: CreateOrderRequest? = null
+
+    init { loadPromotions() }
+
+    fun loadPromotions() {
+        val checkout = checkoutRepository
+        if (_state.value.promotionsLoading) return
+        _state.update { it.copy(promotionsLoading = true, promotionsError = null) }
+        viewModelScope.launch {
+            when (val result = checkout.promotions()) {
+                is ApiResult.Success -> _state.update { it.copy(promotions = result.data, promotionsLoading = false) }
+                is ApiResult.Error -> _state.update { it.copy(promotionsError = result.message, promotionsLoading = false) }
+                ApiResult.Loading -> Unit
+            }
+        }
+    }
+
+    private fun invalidatePreview() {
+        previewJob?.cancel()
+        previewRequest = null
+        _state.update { it.copy(preview = null, isPreviewing = false) }
+    }
+
+    fun previewPrice() {
+        val checkout = checkoutRepository
+        val snapshot = _state.value
+        if (snapshot.isSubmitting || snapshot.isPreviewing) return
+        val errors = validate(snapshot)
+        if (errors.isNotEmpty()) {
+            _state.update { it.copy(fieldErrors = errors, errorMessage = "Vui lòng kiểm tra lại thông tin.") }
+            return
+        }
+        val request = snapshot.toRequest()
+        _state.update { it.copy(isPreviewing = true, errorMessage = null, preview = null) }
+        previewJob = viewModelScope.launch {
+            when (val result = checkout.preview(request)) {
+                is ApiResult.Success -> {
+                    previewRequest = request
+                    _state.update { it.copy(preview = result.data, isPreviewing = false) }
+                }
+                is ApiResult.Error -> _state.update { it.copy(isPreviewing = false, errorMessage = result.message) }
+                ApiResult.Loading -> Unit
+            }
+        }
+    }
+
+    fun useSuggestedPoints() {
+        val points = _state.value.preview?.points?.usablePoints ?: return
+        updateField(CreateOrderField.PointsToUse, points.toString())
+        previewPrice()
+    }
 
     fun updateField(field: CreateOrderField, value: String) {
+        invalidatePreview()
         _state.update { current ->
             val updated = when (field) {
                 CreateOrderField.PickupAddress -> current.copy(pickupAddress = value)
@@ -79,6 +140,7 @@ class CreateOrderViewModel(
     }
 
     fun onAddressQueryChanged(field: CreateOrderField, value: String) {
+        invalidatePreview()
         require(field == CreateOrderField.PickupAddress || field == CreateOrderField.DropoffAddress)
         if (field == CreateOrderField.PickupAddress) {
             pickupSearchJob?.cancel()
@@ -157,6 +219,7 @@ class CreateOrderViewModel(
     }
 
     fun selectAddress(field: CreateOrderField, suggestion: AddressSuggestion) {
+        invalidatePreview()
         require(field == CreateOrderField.PickupAddress || field == CreateOrderField.DropoffAddress)
         if (field == CreateOrderField.PickupAddress) {
             pickupSearchJob?.cancel()
@@ -187,6 +250,7 @@ class CreateOrderViewModel(
     }
 
     fun startLocatingPickup() {
+        invalidatePreview()
         pickupSearchJob?.cancel()
         _state.update {
             it.copy(
@@ -199,6 +263,7 @@ class CreateOrderViewModel(
     }
 
     fun usePickupLocation(latitude: Double, longitude: Double) {
+        invalidatePreview()
         _state.update {
             it.copy(
                 pickupAddress = "Vị trí hiện tại",
@@ -214,6 +279,7 @@ class CreateOrderViewModel(
                 is ApiResult.Success -> _state.update {
                     it.copy(
                         pickupAddress = result.data?.label ?: "Vị trí hiện tại",
+                        preview = null,
                         isLocatingPickup = false,
                         locationMessage = "Đã chọn vị trí hiện tại."
                     )
@@ -244,6 +310,14 @@ class CreateOrderViewModel(
         }
 
         val request = snapshot.toRequest()
+        if (previewRequest != request || snapshot.preview == null) {
+            previewPrice()
+            return
+        }
+        if (snapshot.preview.points.usablePoints != request.pointsToUse) {
+            _state.update { it.copy(errorMessage = "Số điểm yêu cầu vượt mức có thể dùng. Hãy chọn số điểm gợi ý và xem lại phí.") }
+            return
+        }
         _state.update { it.copy(isSubmitting = true, errorMessage = null, fieldErrors = emptyMap()) }
         viewModelScope.launch {
             when (val result = repository.create(request)) {
@@ -307,17 +381,19 @@ class CreateOrderViewModel(
     override fun onCleared() {
         pickupSearchJob?.cancel()
         dropoffSearchJob?.cancel()
+        previewJob?.cancel()
         super.onCleared()
     }
 
     class Factory(
         private val repository: OrderRepository,
-        private val addressRepository: AddressRepository = EmptyAddressRepository
+        private val addressRepository: AddressRepository = EmptyAddressRepository,
+        private val checkoutRepository: CheckoutRepository
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(CreateOrderViewModel::class.java))
-            return CreateOrderViewModel(repository, addressRepository) as T
+            return CreateOrderViewModel(repository, addressRepository, checkoutRepository) as T
         }
     }
 }

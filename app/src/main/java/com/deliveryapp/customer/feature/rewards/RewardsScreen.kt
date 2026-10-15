@@ -76,17 +76,18 @@ private fun RewardsContent(loyalty: LoyaltyAccountResponse, onUsePoints: () -> U
     DeliveryCard {
         InfoRow("ID người dùng", loyalty.customerId.take(12))
         InfoRow("Điểm hiện có", "${loyalty.points} điểm")
+        InfoRow("Điểm có thể dùng", "${loyalty.availablePoints} điểm")
         InfoRow("Hạng", loyalty.tier.uppercase())
-        InfoRow("Ưu đãi hạng", "Chưa áp dụng giảm phí")
+        InfoRow("Ưu đãi hạng dự kiến", "${loyalty.tierDiscountPercent}% • chưa áp dụng vào phí")
         InfoRow("Quy đổi", "1 điểm = 1.000đ")
     }
     Text("Quy định đổi điểm", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     DeliveryCard {
         Text("1. Giới hạn điểm", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text("Mỗi đơn chỉ có thể dùng tối đa 5 điểm để quy đổi.", style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
-        Text("Tương đương mỗi đơn chỉ có thể giảm 5.000đ.", style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
+        Text("Số điểm dùng phụ thuộc số dư khả dụng và phí còn lại sau khuyến mãi.", style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
+        Text("Điểm đang giữ cho đơn khác chưa thể sử dụng. Phần giảm không vượt quá phí còn lại.", style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
         Text("2. Quy tắc hạng thành viên", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text("Hạng SILVER/GOLD dùng để hiển thị trong MVP, chưa tự động giảm tổng phí.", style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
+        Text("SILVER từ 100 điểm, GOLD từ 500 điểm. Ưu đãi hạng chưa tự động giảm tổng phí.", style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
         Text("Điểm chỉ được cộng sau khi đơn COMPLETED và mỗi đơn chỉ được cộng một lần.", style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
         Text("Điểm được xem trước và sử dụng trong bước xác nhận tạo đơn.", style = MaterialTheme.typography.bodySmall, color = DeliveryMuted)
     }

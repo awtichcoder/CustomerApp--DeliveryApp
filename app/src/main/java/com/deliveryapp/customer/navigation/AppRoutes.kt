@@ -11,6 +11,7 @@ object AppRoutes {
     const val Orders = "orders"
     const val Rewards = "rewards"
     const val Profile = "profile"
+    const val Notifications = "notifications"
 
     fun orderDetail(orderId: String) = "order-detail/$orderId"
     fun tracking(orderId: String) = "tracking/$orderId"

@@ -136,10 +136,15 @@ fun CreateOrderScreen(
             bottomBar = {
                 Surface(color = DeliverySurface) {
                     PrimaryAction(
-                        label = if (state.isSubmitting) "Đang tạo đơn…" else "Tạo đơn giao hàng",
+                        label = when {
+                            state.isSubmitting -> "Đang tạo đơn…"
+                            state.isPreviewing -> "Đang tính phí…"
+                            state.preview == null -> "Xem phí và điểm sử dụng"
+                            else -> "Xác nhận tạo đơn • ${money(state.preview!!.totalFee)}"
+                        },
                         onClick = viewModel::submit,
                         modifier = Modifier.padding(20.dp),
-                        loading = state.isSubmitting
+                        loading = state.isSubmitting || state.isPreviewing
                     )
                 }
             }
@@ -196,13 +201,27 @@ fun CreateOrderScreen(
                     ) { viewModel.updateField(CreateOrderField.ReceiverPhone, it) }
                 }
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Box(Modifier.weight(1f)) {
-                            OrderField("Mã ưu đãi", state.promotionCode, state.fieldErrors[CreateOrderField.PromotionCode]) {
-                                viewModel.updateField(CreateOrderField.PromotionCode, it)
-                            }
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Chọn mã ưu đãi", fontWeight = FontWeight.Bold)
+                        if (state.promotionsLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
+                        state.promotionsError?.let {
+                            Text(it, color = DeliveryDanger)
+                            TextButton(onClick = viewModel::loadPromotions) { Text("Tải lại mã ưu đãi") }
                         }
-                        Box(Modifier.weight(1f)) {
+                        FilterChip(selected = state.promotionCode.isBlank(),
+                            onClick = { viewModel.updateField(CreateOrderField.PromotionCode, "") },
+                            label = { Text("Không dùng mã") })
+                        state.promotions.forEach { promotion ->
+                            FilterChip(selected = state.promotionCode == promotion.code,
+                                onClick = { viewModel.updateField(CreateOrderField.PromotionCode, promotion.code) },
+                                label = { Column {
+                                    Text("${promotion.code} • ${promotion.description}")
+                                    Text("Đơn tối thiểu ${money(promotion.minOrderAmount)} • hết hạn ${promotion.endAt.take(10)}")
+                                } })
+                        }
+                        if (!state.promotionsLoading && state.promotions.isEmpty() && state.promotionsError == null)
+                            Text("Hiện chưa có mã ưu đãi còn hiệu lực.")
+                        Box(Modifier.fillMaxWidth()) {
                             OrderField(
                                 "Điểm sử dụng",
                                 state.pointsToUse,
@@ -231,6 +250,26 @@ fun CreateOrderScreen(
                     }
                 }
                 state.errorMessage?.let { item { ErrorCard(it) } }
+                state.preview?.let { preview -> item {
+                    DeliveryCard {
+                        Text("Phí dự kiến", fontWeight = FontWeight.Bold)
+                        InfoRow("Phí cơ bản", money(preview.price.baseFee))
+                        InfoRow("Phụ phí", money(preview.price.surcharge))
+                        InfoRow("Phí nền tảng", money(preview.price.platformFee))
+                        InfoRow("Giảm khuyến mãi", money(preview.price.discountPromotion))
+                        InfoRow("Điểm khả dụng", preview.points.availablePoints.toString())
+                        InfoRow("Điểm có thể dùng", preview.points.usablePoints.toString())
+                        InfoRow("Giảm bằng điểm", money(preview.points.discountAmount))
+                        InfoRow("Tổng dự kiến", money(preview.totalFee))
+                        Text("Ưu đãi và số dư được kiểm tra lại khi tạo đơn.", style = MaterialTheme.typography.bodySmall)
+                        if (preview.points.usablePoints != state.pointsToUse.toIntOrNull()) {
+                            TextButton(onClick = viewModel::useSuggestedPoints) {
+                                Text("Dùng ${preview.points.usablePoints} điểm và tính lại")
+                            }
+                        }
+                        TextButton(onClick = viewModel::previewPrice) { Text("Cập nhật phí") }
+                    }
+                } }
                 item { Spacer(Modifier.height(10.dp)) }
             }
         }
@@ -624,7 +663,7 @@ private fun ScreenWithBottomBar(
 @Composable
 private fun createOrderViewModel(): CreateOrderViewModel {
     val app = LocalContext.current.applicationContext as DeliveryCustomerApplication
-    return viewModel(factory = CreateOrderViewModel.Factory(app.container.orderRepository, app.container.addressRepository))
+    return viewModel(factory = CreateOrderViewModel.Factory(app.container.orderRepository, app.container.addressRepository, app.container.checkoutRepository))
 }
 
 @Composable

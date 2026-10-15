@@ -11,6 +11,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface OrderApi {
+    @POST("api/order/preview") suspend fun preview(@Body request: CreateOrderRequest): com.deliveryapp.customer.data.dto.OrderPricePreview
     @POST("api/order") suspend fun create(@Body request: CreateOrderRequest): OrderResponse
     @GET("api/order") suspend fun getOrders(
         @Query("page") page: Int = 1,

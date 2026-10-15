@@ -83,6 +83,16 @@ fun TrackingScreen(
     viewModel: TrackingViewModel = trackingViewModel(orderId)
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var showHelp by remember { mutableStateOf(false) }
+    if (showHelp) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showHelp = false },
+            title = { Text("Trợ giúp theo dõi đơn") },
+            text = { Text("Vị trí tài xế được cập nhật khoảng 30 giây/lần. Nếu chưa thấy vị trí, hãy kiểm tra kết nối rồi chọn Kết nối lại. Bạn có thể hủy đơn ở trang chi tiết trước khi tài xế lấy hàng. Mã đơn: $orderId") },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { showHelp = false; viewModel.retry() }) { Text("Kết nối lại") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { showHelp = false; onBack() }) { Text("Chi tiết đơn") } }
+        )
+    }
     DisposableEffect(orderId) {
         viewModel.startPolling()
         onDispose(viewModel::stopPolling)
@@ -121,7 +131,7 @@ fun TrackingScreen(
                         )
                     }
                     Surface(shape = CircleShape, color = DeliverySurface) {
-                        IconButton(onClick = {}) {
+                        IconButton(onClick = { showHelp = true }) {
                             Icon(Icons.Outlined.HelpOutline, "Trợ giúp", tint = DeliveryGreen)
                         }
                     }

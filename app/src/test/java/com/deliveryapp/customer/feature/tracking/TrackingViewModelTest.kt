@@ -24,6 +24,23 @@ class TrackingViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
+    fun afterPickup_routeSwitchesToDropoff() = runTest(mainDispatcherRule.dispatcher) {
+        val delivery = AssignedDeliveryRepository()
+        val routes = RecordingRoutingRepository()
+        val viewModel = TrackingViewModel("order-1", delivery, 1_000, routes)
+        viewModel.startPolling()
+        runCurrent()
+        assertEquals(10.780001, routes.endLatitude, 0.000001)
+        delivery.status = "PICKED_UP"
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertEquals(10.790001, routes.endLatitude, 0.000001)
+        assertEquals(106.700001, routes.endLongitude, 0.000001)
+        assertEquals("Đường đến điểm giao", viewModel.state.value.routeDestinationLabel)
+        viewModel.stopPolling()
+    }
+
+    @Test
     fun polling_updatesLocationAndStops() = runTest(mainDispatcherRule.dispatcher) {
         val repository = AssignedDeliveryRepository()
         val viewModel = TrackingViewModel("order-1", repository, pollIntervalMs = 10)
@@ -69,6 +86,7 @@ class TrackingViewModelTest {
 }
 
 private class AssignedDeliveryRepository : DeliveryRepository {
+    var status = "ASSIGNED"
     var locationCalls = 0
 
     override suspend fun getByOrder(orderId: String) = ApiResult.Success(
@@ -77,7 +95,7 @@ private class AssignedDeliveryRepository : DeliveryRepository {
             orderId = orderId,
             customerId = "customer-1",
             driverId = "driver-1",
-            status = "ASSIGNED",
+            status = status,
             totalFee = 59_520,
             version = 2,
             pickupLatitude = 10.780001,
